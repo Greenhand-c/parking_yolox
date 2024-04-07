@@ -4,6 +4,8 @@ import shapely
 import numpy as np
 from shapely.geometry import Polygon, MultiPoint
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 class IOUloss(nn.Module):
     def __init__(self, reduction="none", loss_type="iou"):
         super(IOUloss, self).__init__()
@@ -13,7 +15,7 @@ class IOUloss(nn.Module):
     def bbox_iou_eval(self, box1, box2):
         combined_coords = torch.cat((box1, box2), dim=0)
         box1 = np.array(box1.detach().cpu()).reshape(-1, 2)
-        poly1 = Polygon(box1).convex_hull #POLYGON
+        poly1 = Polygon(box1).convex_hull # POLYGON
         box2 = np.array(box2.detach().cpu()).reshape(-1, 2)
         poly2 = Polygon(box2).convex_hull
         if not poly1.intersects(poly2):  # If two quadrilaterals do not intersect
@@ -26,6 +28,7 @@ class IOUloss(nn.Module):
                 print('shapely.geos.TopologicalError occured, iou set to 0')
                 iou = 0
         if self.loss_type == "giou":
+            combined_coords = combined_coords.cpu().detach().numpy()
             multi_point = MultiPoint(combined_coords)
             min_bounding_rect = multi_point.minimum_rotated_rectangle
             min_bounding_rect_area = min_bounding_rect.area

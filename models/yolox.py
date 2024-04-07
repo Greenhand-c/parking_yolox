@@ -27,12 +27,12 @@ class YOLOX(nn.Module):
 
         if self.training:
             assert targets is not None
-            loss, iou_loss, conf_loss, cls_loss, num_fg = self.head(
+            loss, corr_loss, conf_loss, cls_loss, num_fg = self.head(
                 fpn_outs, targets, x
             )
             outputs = {
                 "total_loss": loss,
-                "iou_loss": iou_loss,
+                "corr_loss": corr_loss,
                 "conf_loss": conf_loss,
                 "cls_loss": cls_loss,
                 "num_fg": num_fg,
@@ -47,7 +47,7 @@ class YOLOX(nn.Module):
         self.head.visualize_assign_result(fpn_outs, targets, x, save_prefix)
 
 if __name__ == '__main__':
-    images = torch.zeros(2, 3, 640, 640)
+    images = torch.zeros(1, 3, 640, 640)
     # labels shape ==> [bs, num_targets, cls+four_points]
     labels = torch.tensor([[[0,62.3,86.4,76.7,86.9,78.2,44.5,63.3,44.5],
                             [0,63.3,44.5,78.2,44.5,79.6,4.1,63.6,4.0],
@@ -57,6 +57,9 @@ if __name__ == '__main__':
                             [0,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0],
                             [0,0,0,0,0,0,0,0,0]]])
-    yolox = YOLOX()#.eval() #train()
-    outputs = yolox(images, labels)
-    print(outputs["total_loss"])
+    bkb = YOLOPAFPN(depth=0.33, width=0.5)
+    head = YOLOXHead(1,4,0.5)
+    yolox = YOLOX(backbone=bkb,head=head)#.eval() #train()
+    outputs = yolox(images,labels)
+    print(yolox)#["total_loss"])
+    print(outputs)
